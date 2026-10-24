@@ -457,8 +457,9 @@ html, body {
   cursor: pointer;
 }
 
-/* Round Over Overlay */
-#roundOverModal {
+/* Round Over & Disconnect Overlays */
+#roundOverModal,
+#disconnectModal {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -470,24 +471,38 @@ html, body {
   text-align: center;
   z-index: 45;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.75);
-  min-width: 310px;
+  min-width: 320px;
+  max-width: 440px;
 }
 
-#roundOverModal.hidden {
+#disconnectModal {
+  border-color: var(--danger-coral);
+  z-index: 48;
+}
+
+#roundOverModal.hidden,
+#disconnectModal.hidden {
   display: none;
 }
 
-#roundWinnerTitle {
+#roundWinnerTitle,
+#disconnectTitle {
   font-size: 26px;
   font-weight: 900;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
 
-#roundWinnerSub {
+#disconnectTitle {
+  color: var(--danger-coral);
+}
+
+#roundWinnerSub,
+#disconnectReason {
   font-size: 14px;
   color: var(--text-muted);
   margin-bottom: 18px;
+  line-height: 1.45;
 }
 
 /* Mobile Twin-Stick Controls (Bottom Left WASD Circle & Bottom Right Shoot/Aim Circle + Grenade) */
@@ -567,15 +582,13 @@ html, body {
   background: rgba(255, 107, 43, 0.9);
 }
 
-/* Dedicated Mobile Paint Grenade Button tucked right next to the right stick */
+/* Dedicated Mobile FIRE (Top-Left of Right Stick) & GRENADE (Top-Right of Right Stick) Buttons */
+#mobileFireBtn,
 #mobileGrenadeBtn {
   position: absolute;
-  bottom: 148px;
-  right: 148px;
-  width: 68px;
-  height: 68px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--accent-yellow) 0%, #d48c29 100%);
   border: 3px solid #fff;
   color: #181a17;
   font-size: 11px;
@@ -592,6 +605,19 @@ html, body {
   transition: transform 0.1s ease, opacity 0.2s ease;
 }
 
+#mobileFireBtn {
+  bottom: 148px;
+  right: 156px;
+  background: radial-gradient(circle, #ff8854 0%, var(--p1-color) 100%);
+}
+
+#mobileGrenadeBtn {
+  bottom: 178px;
+  right: 76px;
+  background: radial-gradient(circle, var(--accent-yellow) 0%, #d48c29 100%);
+}
+
+#mobileFireBtn:active,
 #mobileGrenadeBtn:active {
   transform: scale(0.92);
 }

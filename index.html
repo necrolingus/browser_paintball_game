@@ -65,6 +65,16 @@
     </button>
   </div>
 
+  <!-- Server / Peer Disconnect Alert Modal -->
+  <div id="disconnectModal" class="hidden" role="alertdialog" aria-live="assertive">
+    <h2 id="disconnectTitle">Server Disconnected!</h2>
+    <p id="disconnectReason">The host left the game or connection was lost.</p>
+    <button id="disconnectLobbyBtn" class="primary-btn btn-host" style="width:100%;" type="button">
+      Return to Lobby
+      <span class="btn-sub">Start a new server, join another port, or play vs. AI Bot</span>
+    </button>
+  </div>
+
   <!-- Main Lobby Overlay (Start Server / Join Server / Practice vs. AI Bot) -->
   <div id="lobbyOverlay" class="overlay">
     <div class="modal-card">
@@ -105,14 +115,14 @@
 
       <div class="rules-summary">
         <div><strong>PC Controls:</strong> WASD move, Mouse aim, Left-Click shoot, Right-Click paint grenade.</div>
-        <div><strong>Mobile Controls:</strong> Left circle WASD move, Right circle aim &amp; shoot + Grenade button.</div>
+        <div><strong>Mobile Controls:</strong> Left circle WASD move, Right circle aim/look, with dedicated Fire &amp; Grenade buttons.</div>
         <div><strong>Damage Rules:</strong> 3 normal shots or 2 grenades = Out! Watch out for grenade self-damage.</div>
         <div><strong>Cover Physics:</strong> Grenades lob OVER low crates but BOUNCE off tall containers &amp; trees!</div>
       </div>
     </div>
   </div>
 
-  <!-- Mobile Twin-Stick + Action Buttons Overlay -->
+  <!-- Mobile Twin-Stick + Dedicated Fire & Grenade Action Buttons Overlay -->
   <div id="mobileControls" class="hidden">
     <!-- Bottom-Left WASD Circle -->
     <div id="leftStickZone" class="joystick-zone">
@@ -124,13 +134,16 @@
       <span class="stick-role-label">MOVE (WASD)</span>
     </div>
 
-    <!-- Dedicated Paint Grenade Button Tucked Next to Right Stick -->
+    <!-- Dedicated Mobile FIRE Button (Top-Left of Right Aim Circle) -->
+    <button id="mobileFireBtn" type="button">FIRE<br>SHOT</button>
+
+    <!-- Dedicated Mobile PAINT GRENADE Button (Top-Right of Right Aim Circle) -->
     <button id="mobileGrenadeBtn" type="button">PAINT<br>GRENADE</button>
 
-    <!-- Bottom-Right Aim & Shoot Circle -->
+    <!-- Bottom-Right Aim / Look Circle (Sweeps vision cone without auto-firing!) -->
     <div id="rightStickZone" class="joystick-zone">
       <div id="rightStickKnob" class="joystick-knob"></div>
-      <span class="stick-role-label">AIM &amp; FIRE</span>
+      <span class="stick-role-label">AIM / LOOK</span>
     </div>
   </div>
 

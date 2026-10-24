@@ -8,14 +8,16 @@
    - **Left Mouse Button**: Fire normal paintball shot.
    - **Right Mouse Button**: Throw paint grenade.
 3. **Mobile Controls**:
-   - **Twin-Stick + Action Buttons**:
+   - **Twin-Stick + Dedicated Fire & Grenade Action Buttons**:
      - Bottom-left virtual joystick circle for movement (`WASD` equivalent).
-     - Bottom-right virtual joystick circle for aiming the view cone and firing normal paintballs, with a dedicated **Paint Grenade** button tucked right next to the right stick.
+     - Bottom-right virtual joystick circle for **aiming / looking** (sweeping the vision cone silently without auto-firing).
+     - Dedicated **Fire Shot** button (top-left of right stick) and **Paint Grenade** button (top-right of right stick).
 
 ## Networking, Modes & Architecture
 4. **Serverless / Static Hosting (WebRTC P2P + Local BroadcastChannel fallback)**:
    - Purely client-side `HTML` / `CSS` / `JS` (no backend server required; works by opening `index.html`, or hosting on GitHub Pages / Cloudflare Pages).
    - Uses WebRTC Peer-to-Peer (via PeerJS) where the port/room input defaults to `60001` (allowing users to enter their own custom port/room number), plus same-browser BroadcastChannel support for instant offline multi-tab testing.
+   - **Server Drop / Disconnect Detection**: If the host or client disconnects, closes their tab, or times out, the remaining player immediately receives a **"Server Dropped! / Opponent Disconnected!"** modal notification with a button to return to the lobby.
    - Lobby UI presents:
      - **"Start Server"** (hosts room `60001` or custom code)
      - **"Join Server"** (connects to room `60001` or custom code)
@@ -34,7 +36,7 @@
      - Lob in an arc **over low obstacles (wooden crates)** while **bouncing off tall obstacles (shipping containers and trees)** up to a limited throw range.
      - Explode in a colorful paint splash radius after landing/fuse.
      - **Grenade splatter/explosion damage is blocked by all obstacles** (cannot travel through crates, containers, or trees) and has a cooldown so players cannot spam them.
-     -Persistent colorful paint splatters remain on the ground and obstacle edges for the round.
+     - Persistent colorful paint splatters remain on the ground and obstacle edges for the round.
 7. **Mutual Restart Proposal**:
    - Any player can click **"Restart Game"** at any time (useful if map generation feels tight or after a round).
    - In multiplayer, the other player receives an on-screen prompt and must agree (**"Yes, Restart Game"**) before the level regenerates and resets both players (in Bot mode, the AI immediately agrees).
@@ -58,4 +60,4 @@
     - Family-friendly for all ages: **no blood** — only vibrant, colorful paint splatters!
     - Realistic, tactile paintball arena feel (earthy turf/sand, wood crates, weathered industrial containers, lush foliage, bright orange/lime/yellow/coral paint) while **steering clear of generic AI blue/purple UI themes**.
 13. **Testing**:
-    - Fully tested across desktop and mobile viewports (including multiplayer P2P synchronization, restart voting, grenade bounce & self-damage, and Fog of War occlusion) using Playwright browsers.
+    - Fully tested across desktop and mobile viewports (including multiplayer P2P synchronization, server drop notification, restart voting, grenade bounce & self-damage, and Fog of War occlusion) using Playwright browsers.

@@ -139,11 +139,16 @@
         roundWinnerTitle: document.getElementById('roundWinnerTitle'),
         roundWinnerSub: document.getElementById('roundWinnerSub'),
         roundRestartBtn: document.getElementById('roundRestartBtn'),
+        disconnectModal: document.getElementById('disconnectModal'),
+        disconnectTitle: document.getElementById('disconnectTitle'),
+        disconnectReason: document.getElementById('disconnectReason'),
+        disconnectLobbyBtn: document.getElementById('disconnectLobbyBtn'),
         mobileControls: document.getElementById('mobileControls'),
         leftStickZone: document.getElementById('leftStickZone'),
         leftStickKnob: document.getElementById('leftStickKnob'),
         rightStickZone: document.getElementById('rightStickZone'),
         rightStickKnob: document.getElementById('rightStickKnob'),
+        mobileFireBtn: document.getElementById('mobileFireBtn'),
         mobileGrenadeBtn: document.getElementById('mobileGrenadeBtn')
       };
     }
@@ -241,6 +246,11 @@
         this.confirmRestartVote(false);
       });
 
+      this.dom.disconnectLobbyBtn.addEventListener('click', () => {
+        window.PaintballAudio.playUIClick();
+        this.returnToLobby();
+      });
+
       // Network callbacks
       window.PaintballNetwork.onStatus((msg) => {
         this.dom.lobbyStatus.textContent = msg;
@@ -260,9 +270,23 @@
         }
       });
 
+      window.PaintballNetwork.onDisconnect((reason) => {
+        if (this.mode === 'host' || this.mode === 'client') {
+          this.roundOver = true;
+          this.dom.restartModal.classList.add('hidden');
+          this.dom.roundOverModal.classList.add('hidden');
+          this.dom.disconnectTitle.textContent =
+            this.mode === 'client' ? 'Server Dropped!' : 'Opponent Disconnected!';
+          this.dom.disconnectReason.textContent =
+            reason || 'Connection to the other player was lost (did someone rage quit?).';
+          this.dom.disconnectModal.classList.remove('hidden');
+          window.PaintballAudio.playHit(true);
+        }
+      });
+
       window.PaintballNetwork.onMessage((msg) => this._handleNetworkMessage(msg));
 
-      // Mobile Twin-Stick + Grenade Touch/Pointer Controls
+      // Mobile Twin-Stick + Dedicated Fire & Grenade Touch/Pointer Controls
       this._initMobileTouchControls();
     }
 
@@ -326,9 +350,7 @@
             this.mobileInput.rightId = e.pointerId;
           }
           updateFromPoint(e.clientX, e.clientY);
-          if (isRightStick) {
-            this.tryFireLocalBullet();
-          }
+          // Right stick is purely for aiming / looking around (no auto-fire!)
         });
 
         zoneEl.addEventListener('pointermove', (e) => {
@@ -350,6 +372,23 @@
       bindStick(this.dom.leftStickZone, this.dom.leftStickKnob, false);
       bindStick(this.dom.rightStickZone, this.dom.rightStickKnob, true);
 
+      // Dedicated Mobile FIRE button (tap or hold to fire normal paintballs)
+      this.dom.mobileFireBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.PaintballAudio.initContext();
+        this.dom.mobileFireBtn.setPointerCapture(e.pointerId);
+        this.mobileInput.fireButtonHeld = true;
+        this.tryFireLocalBullet();
+      });
+      this.dom.mobileFireBtn.addEventListener('pointerup', () => {
+        this.mobileInput.fireButtonHeld = false;
+      });
+      this.dom.mobileFireBtn.addEventListener('pointercancel', () => {
+        this.mobileInput.fireButtonHeld = false;
+      });
+
+      // Dedicated Mobile GRENADE button
       this.dom.mobileGrenadeBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -389,6 +428,7 @@
       this.dom.hud.classList.remove('hidden');
       this.dom.restartModal.classList.add('hidden');
       this.dom.roundOverModal.classList.add('hidden');
+      this.dom.disconnectModal.classList.add('hidden');
 
       if (this.localPlayerId === 'p1') {
         this.dom.p1Label.textContent = 'Player 1 (YOU)';
@@ -404,6 +444,20 @@
         'ontouchstart' in window;
       this.setMobileControlsVisible(isMobileViewport);
       this._updateHUD();
+    }
+
+    returnToLobby() {
+      window.PaintballNetwork.cleanup();
+      this.mode = 'menu';
+      this.roundOver = false;
+      this.dom.disconnectModal.classList.add('hidden');
+      this.dom.restartModal.classList.add('hidden');
+      this.dom.roundOverModal.classList.add('hidden');
+      this.dom.hud.classList.add('hidden');
+      this.dom.mobileControls.classList.add('hidden');
+      this.dom.lobbyOverlay.classList.remove('hidden');
+      this.dom.lobbyStatus.textContent =
+        'Ready. Enter port (default 60001) and click Start Server, Join Server, or Practice vs. AI Bot.';
     }
 
     startBotMatch() {
@@ -870,13 +924,13 @@
       local.vx = mx * local.speed;
       local.vy = my * local.speed;
 
-      // Aiming: if right mobile stick is active, it controls angle and fires; else mouse relative to screen center
+      // Aiming: if right mobile stick is active, it controls angle ONLY (no auto-fire);
+      // Mobile firing only happens when the dedicated mobile FIRE button is pressed/held!
       if (this.mobileInput.rightActive) {
-        if (Math.hypot(this.mobileInput.rightX, this.mobileInput.rightY) > 0.25) {
+        if (Math.hypot(this.mobileInput.rightX, this.mobileInput.rightY) > 0.18) {
           local.angle = Math.atan2(this.mobileInput.rightY, this.mobileInput.rightX);
-          this.tryFireLocalBullet();
         }
-      } else if (!this.mobileInput.leftActive) {
+      } else if (!this.mobileInput.leftActive && !this.mobileInput.fireButtonHeld) {
         const cx = this.canvas.width / 2;
         const cy = this.canvas.height / 2;
         const dx = this.mouse.screenX - cx;
@@ -887,6 +941,10 @@
         if (this.mouse.leftDown) {
           this.tryFireLocalBullet();
         }
+      }
+
+      if (this.mobileInput.fireButtonHeld) {
+        this.tryFireLocalBullet();
       }
     }
 

@@ -9,10 +9,26 @@
       this.connected = false;
       this.onMessageCallback = null;
       this.onConnectCallback = null;
+      this.onDisconnectCallback = null;
       this.onStatusCallback = null;
       this.seenMsgIds = new Set();
       this.msgCounter = 0;
+      this.lastSeenPeerTime = 0;
+      this._heartbeatInterval = null;
+      this._joinInterval = null;
       this.clientId = 'p_' + Math.random().toString(36).slice(2, 10);
+
+      // Broadcast immediate disconnect packet if tab is closed, reloaded, or navigated away
+      const handleUnload = () => {
+        if (this.connected && (this.role === 'host' || this.role === 'client')) {
+          this.send({
+            type: 'peer_disconnect',
+            role: this.role
+          });
+        }
+      };
+      window.addEventListener('beforeunload', handleUnload);
+      window.addEventListener('pagehide', handleUnload);
     }
 
     onMessage(cb) {
@@ -21,6 +37,10 @@
 
     onConnect(cb) {
       this.onConnectCallback = cb;
+    }
+
+    onDisconnect(cb) {
+      this.onDisconnectCallback = cb;
     }
 
     onStatus(cb) {
@@ -33,6 +53,14 @@
 
     cleanup() {
       this.connected = false;
+      if (this._joinInterval) {
+        clearInterval(this._joinInterval);
+        this._joinInterval = null;
+      }
+      if (this._heartbeatInterval) {
+        clearInterval(this._heartbeatInterval);
+        this._heartbeatInterval = null;
+      }
       if (this.conn) {
         try { this.conn.close(); } catch (e) {}
         this.conn = null;
@@ -74,16 +102,9 @@
           });
           this.peer.on('connection', (conn) => {
             this.conn = conn;
-            conn.on('open', () => {
-              this._markConnected();
-            });
-            conn.on('data', (data) => {
-              this._handleIncomingRaw(data);
-            });
+            this._bindConnEvents(conn);
           });
-          this.peer.on('error', () => {
-            // BroadcastChannel still works even if PeerJS cloud broker is unreachable or ID busy
-          });
+          this.peer.on('error', () => {});
         } catch (err) {}
       }
     }
@@ -101,7 +122,6 @@
           this._handleIncomingRaw(ev.data);
         };
         this.send({ type: 'join_request', port: this.port });
-        // Retry join ping briefly in case host just clicked start
         this._joinInterval = setInterval(() => {
           if (this.connected || this.role !== 'client') {
             clearInterval(this._joinInterval);
@@ -120,24 +140,75 @@
             const hostPeerId = `paintball-arena-host-${this.port}`;
             const conn = this.peer.connect(hostPeerId, { reliable: true });
             this.conn = conn;
-            conn.on('open', () => {
-              this.send({ type: 'join_request', port: this.port });
-            });
-            conn.on('data', (data) => {
-              this._handleIncomingRaw(data);
-            });
+            this._bindConnEvents(conn);
           });
           this.peer.on('error', () => {});
         } catch (err) {}
       }
     }
 
+    _bindConnEvents(conn) {
+      conn.on('open', () => {
+        if (this.role === 'client') {
+          this.send({ type: 'join_request', port: this.port });
+        } else {
+          this._markConnected();
+        }
+      });
+      conn.on('data', (data) => {
+        this._handleIncomingRaw(data);
+      });
+      conn.on('close', () => {
+        this._triggerDisconnect(
+          this.role === 'client'
+            ? 'The Host server disconnected or closed the game.'
+            : 'Player 2 disconnected from your server.'
+        );
+      });
+      conn.on('error', () => {
+        this._triggerDisconnect(
+          this.role === 'client'
+            ? 'Lost connection to the Host server.'
+            : 'Lost connection to Player 2.'
+        );
+      });
+    }
+
     _markConnected() {
       if (this.connected) return;
       this.connected = true;
-      if (this._joinInterval) clearInterval(this._joinInterval);
+      this.lastSeenPeerTime = performance.now();
+      if (this._joinInterval) {
+        clearInterval(this._joinInterval);
+        this._joinInterval = null;
+      }
+
+      // Start heartbeat ping & connection timeout watchdog
+      if (this._heartbeatInterval) clearInterval(this._heartbeatInterval);
+      this._heartbeatInterval = setInterval(() => {
+        if (!this.connected) return;
+        this.send({ type: 'heartbeat' });
+        const elapsed = performance.now() - this.lastSeenPeerTime;
+        if (elapsed > 3200) {
+          this._triggerDisconnect(
+            this.role === 'client'
+              ? 'Server dropped! The Host closed the game or lost connection.'
+              : 'Player 2 dropped! Opponent closed the game or lost connection.'
+          );
+        }
+      }, 800);
+
       this._emitStatus(`Connected on Port ${this.port}! Launching match...`);
       if (this.onConnectCallback) this.onConnectCallback();
+    }
+
+    _triggerDisconnect(reason) {
+      if (!this.connected) return;
+      this.cleanup();
+      this._emitStatus(reason);
+      if (this.onDisconnectCallback) {
+        this.onDisconnectCallback(reason);
+      }
     }
 
     _handleIncomingRaw(packet) {
@@ -151,8 +222,23 @@
         }
       }
 
+      this.lastSeenPeerTime = performance.now();
+
       const payload = packet.payload;
       if (!payload) return;
+
+      if (payload.type === 'heartbeat') {
+        return;
+      }
+
+      if (payload.type === 'peer_disconnect') {
+        const msg =
+          payload.role === 'host'
+            ? 'Server dropped! The Host left the game.'
+            : 'Player 2 left the game.';
+        this._triggerDisconnect(msg);
+        return;
+      }
 
       if (payload.type === 'join_request' && this.role === 'host') {
         this.send({ type: 'join_accept', port: this.port });
