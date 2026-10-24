@@ -1,0 +1,645 @@
+:root {
+  --bg-dark: #1c1f1b;
+  --bg-panel: #272b25;
+  --bg-panel-alt: #31372e;
+  --border-rust: #5c5346;
+  --border-highlight: #d48c29;
+  --text-main: #f4f1ea;
+  --text-muted: #b5b0a4;
+  --p1-color: #ff6b2b; /* Vibrant Paintball Orange */
+  --p1-glow: rgba(255, 107, 43, 0.35);
+  --p2-color: #76e024; /* Vibrant Paintball Lime */
+  --p2-glow: rgba(118, 224, 36, 0.35);
+  --accent-yellow: #f5c731;
+  --danger-coral: #ef4b4b;
+  --font-ui: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  touch-action: none;
+}
+
+/* Main Game Canvas */
+#gameCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+}
+
+/* Top HUD Bar */
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 62px;
+  background: linear-gradient(180deg, rgba(28, 31, 27, 0.95) 0%, rgba(39, 43, 37, 0.88) 100%);
+  border-bottom: 2px solid var(--border-rust);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 20;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+#hud.hidden {
+  display: none;
+}
+
+.hud-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 210px;
+}
+
+.hud-player.p2 {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.player-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #181a17;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.player-badge.p1-badge {
+  background: var(--p1-color);
+  box-shadow: 0 0 10px var(--p1-glow);
+}
+
+.player-badge.p2-badge {
+  background: var(--p2-color);
+  box-shadow: 0 0 10px var(--p2-glow);
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Lives / Health Pip Bar (6 HP total: 3 normal shots or 2 grenades) */
+.health-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hud-player.p2 .health-bar-wrap {
+  flex-direction: row-reverse;
+}
+
+.hp-pip {
+  width: 20px;
+  height: 12px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.hp-pip.active.p1-pip {
+  background: var(--p1-color);
+  border-color: #ff9c6e;
+  box-shadow: 0 0 6px var(--p1-glow);
+}
+
+.hp-pip.active.p2-pip {
+  background: var(--p2-color);
+  border-color: #aef272;
+  box-shadow: 0 0 6px var(--p2-glow);
+}
+
+.hp-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 6px;
+  white-space: nowrap;
+}
+
+/* Center HUD Controls */
+.hud-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.weapon-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-rust);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grenade-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  box-shadow: 0 0 6px var(--accent-yellow);
+}
+
+.grenade-indicator.cooldown {
+  background: #6c685f;
+  box-shadow: none;
+}
+
+.hud-btn {
+  background: var(--bg-panel-alt);
+  color: var(--text-main);
+  border: 1.5px solid var(--border-rust);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-btn:hover {
+  border-color: var(--border-highlight);
+  background: #3c4338;
+}
+
+.hud-btn:active {
+  transform: translateY(1px);
+}
+
+.hud-btn.restart-btn {
+  background: #473624;
+  border-color: var(--border-highlight);
+  color: var(--accent-yellow);
+}
+
+.hud-btn.restart-btn:hover {
+  background: #5c452d;
+}
+
+/* Lobby & Modal Overlays */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(39, 43, 37, 0.85) 0%, rgba(20, 22, 19, 0.96) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.modal-card {
+  background: var(--bg-panel);
+  border: 2px solid var(--border-rust);
+  border-top: 4px solid var(--p1-color);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  padding: 28px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65);
+}
+
+.title-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.game-title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.game-title span.splat-orange {
+  color: var(--p1-color);
+}
+
+.game-title span.splat-lime {
+  color: var(--p2-color);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+
+.port-group {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-rust);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.port-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-yellow);
+  margin-bottom: 8px;
+}
+
+.port-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.port-input {
+  width: 100%;
+  background: var(--bg-dark);
+  border: 1.5px solid var(--border-rust);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+  font-family: monospace;
+  letter-spacing: 0.08em;
+}
+
+.port-input:focus {
+  outline: none;
+  border-color: var(--border-highlight);
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.primary-btn {
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.12s ease, filter 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.primary-btn span.btn-sub {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  opacity: 0.85;
+}
+
+.primary-btn:hover {
+  filter: brightness(1.08);
+}
+
+.primary-btn:active {
+  transform: scale(0.98);
+}
+
+.btn-host {
+  background: var(--p1-color);
+  color: #161814;
+  border-color: #ff986b;
+}
+
+.btn-join {
+  background: var(--p2-color);
+  color: #161814;
+  border-color: #a9f06c;
+}
+
+.btn-bot {
+  width: 100%;
+  background: #3d4538;
+  color: var(--accent-yellow);
+  border: 2px solid var(--border-highlight);
+  margin-bottom: 18px;
+}
+
+.status-box {
+  background: rgba(0, 0, 0, 0.35);
+  border-left: 4px solid var(--accent-yellow);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-main);
+  margin-bottom: 16px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rules-summary {
+  border-top: 1px solid var(--border-rust);
+  padding-top: 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.rules-summary strong {
+  color: var(--text-main);
+}
+
+/* Mutual Restart Prompt Banner */
+#restartModal {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 2px solid var(--accent-yellow);
+  border-radius: 10px;
+  padding: 14px 20px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+#restartModal.hidden {
+  display: none;
+}
+
+.restart-prompt-text {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.restart-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-yes {
+  background: var(--p2-color);
+  color: #161814;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-no {
+  background: var(--danger-coral);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Round Over Overlay */
+#roundOverModal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(39, 43, 37, 0.96);
+  border: 3px solid var(--accent-yellow);
+  border-radius: 14px;
+  padding: 26px 34px;
+  text-align: center;
+  z-index: 45;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.75);
+  min-width: 310px;
+}
+
+#roundOverModal.hidden {
+  display: none;
+}
+
+#roundWinnerTitle {
+  font-size: 26px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+#roundWinnerSub {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* Mobile Twin-Stick Controls (Bottom Left WASD Circle & Bottom Right Shoot/Aim Circle + Grenade) */
+#mobileControls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+
+#mobileControls.hidden {
+  display: none;
+}
+
+.joystick-zone {
+  position: absolute;
+  bottom: 24px;
+  width: 144px;
+  height: 144px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244, 241, 234, 0.14) 0%, rgba(39, 43, 37, 0.48) 100%);
+  border: 2.5px solid rgba(245, 199, 49, 0.55);
+  pointer-events: auto;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+#leftStickZone {
+  left: 24px;
+}
+
+#rightStickZone {
+  right: 24px;
+  border-color: rgba(255, 107, 43, 0.7);
+}
+
+.stick-compass-label {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(244, 241, 234, 0.45);
+  pointer-events: none;
+}
+
+.stick-compass-label.w { top: 8px; }
+.stick-compass-label.s { bottom: 8px; }
+.stick-compass-label.a { left: 10px; }
+.stick-compass-label.d { right: 10px; }
+
+.stick-role-label {
+  position: absolute;
+  bottom: -20px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(244, 241, 234, 0.7);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.joystick-knob {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(245, 199, 49, 0.85);
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  transform: translate(0px, 0px);
+}
+
+#rightStickKnob {
+  background: rgba(255, 107, 43, 0.9);
+}
+
+/* Dedicated Mobile Paint Grenade Button tucked right next to the right stick */
+#mobileGrenadeBtn {
+  position: absolute;
+  bottom: 148px;
+  right: 148px;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-yellow) 0%, #d48c29 100%);
+  border: 3px solid #fff;
+  color: #181a17;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  transition: transform 0.1s ease, opacity 0.2s ease;
+}
+
+#mobileGrenadeBtn:active {
+  transform: scale(0.92);
+}
+
+#mobileGrenadeBtn.cooldown {
+  background: #4e524b;
+  color: var(--text-muted);
+  border-color: #777;
+}
+
+/* Responsive Adjustments for Mobile Screens (Portrait & Landscape) */
+@media (max-width: 960px) {
+  #hud {
+    height: 54px;
+    padding: 0 10px;
+  }
+  .hud-player {
+    min-width: auto;
+    gap: 8px;
+  }
+  .player-badge {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+  .hp-pip {
+    width: 14px;
+    height: 10px;
+  }
+  .hp-text {
+    font-size: 10px;
+    margin: 0 4px;
+  }
+  .weapon-status {
+    display: none;
+  }
+  .hud-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .modal-card {
+    padding: 18px;
+  }
+  .game-title {
+    font-size: 22px;
+  }
+  .rules-summary {
+    grid-template-columns: 1fr;
+  }
+}
