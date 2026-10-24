@@ -341,7 +341,7 @@
           e.preventDefault();
           e.stopPropagation();
           window.PaintballAudio.initContext();
-          zoneEl.setPointerCapture(e.pointerId);
+          try { zoneEl.setPointerCapture(e.pointerId); } catch (err) {}
           if (!isRightStick) {
             this.mobileInput.leftActive = true;
             this.mobileInput.leftId = e.pointerId;
@@ -377,7 +377,7 @@
         e.preventDefault();
         e.stopPropagation();
         window.PaintballAudio.initContext();
-        this.dom.mobileFireBtn.setPointerCapture(e.pointerId);
+        try { this.dom.mobileFireBtn.setPointerCapture(e.pointerId); } catch (err) {}
         this.mobileInput.fireButtonHeld = true;
         this.tryFireLocalBullet();
       });
