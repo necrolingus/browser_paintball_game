@@ -52,4 +52,4 @@ Welcome to **SplatZone**! 🏃‍♂️💨 A fast-paced, 2-player cross-platfor
 ## 🚀 How to Play
 
 1. **Double-Click & Play Locally**: Simply open [`index.html`](index.html) in any modern browser — no `npm install`, no build step, no server setup!
-2. **Host Free Anywhere**: Drop the project folder straight onto **GitHub Pages** or **Cloudflare Pages** and share the link with a friend! 🌍🎨
+2. **Host Free Anywhere**: Drop the project folder straight onto **GitHub Pages** or **Cloudflare Pages** and share the link with a friend! 🌍
